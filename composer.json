@@ -1,0 +1,22 @@
+{
+    "name": "fcz/migrator",
+    "description": "A way to migrate database",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Fcz\\Migrator\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "pm",
+            "email": "pm@101media.ru"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "laravel/prompts": "^0.1.18",
+        "laravel/framework": ">=10.0"
+    }
+}

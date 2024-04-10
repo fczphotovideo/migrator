@@ -3,7 +3,7 @@
 namespace Fcz\Migrator;
 use Carbon\CarbonInterval;
 use Closure;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Stringable;
 use Laravel\Prompts\Progress;

@@ -1,6 +1,7 @@
 <?php
 
 namespace Fcz\Migrator;
+
 use Carbon\CarbonInterval;
 use Closure;
 use Illuminate\Contracts\Database\Query\Builder;
@@ -135,19 +136,18 @@ abstract class Migration
         $this->before();
 
         $this->each(function (stdClass $row) use ($bar, &$migrated, $total, $skip, $start, &$leftToRun) {
-
             $progress = ($skip + $migrated) / $total;
 
             $hint = [
                 Number::percentage($progress * 100),
             ];
 
-            if ($this->skipped) {
-                $hint[] = "skipped $this->skipped";
+            if ($skipped = $this->skipped) {
+                $hint[] = "skipped ".Number::format($skipped)." (".Number::percentage(($skipped / $migrated) * 100).")";
             }
 
-            if ($this->failed) {
-                $hint[] = "failed $this->failed";
+            if ($failed = $this->failed) {
+                $hint[] = "failed ".Number::format($failed)." (".Number::percentage(($failed / $migrated) * 100).")";;
             }
 
             $duration = microtime(true) - $start;

@@ -148,6 +148,11 @@ abstract class Migration
                     Number::percentage($progress * 100),
                 ];
 
+                $duration = microtime(true) - $start;
+                $speed = $migrated / $duration;
+
+                $hint[] = "speed " . Number::format(round($speed)). " p/s";
+
                 if ($skipped = $this->skipped) {
                     $hint[] = "skipped ".Number::format($skipped)." (".Number::percentage(($skipped / $migrated) * 100).")";
                 }
@@ -155,8 +160,6 @@ abstract class Migration
                 if ($failed = $this->failed) {
                     $hint[] = "failed ".Number::format($failed)." (".Number::percentage(($failed / $migrated) * 100).")";;
                 }
-
-                $duration = microtime(true) - $start;
 
                 // Enable countdown after first 5 seconds
                 if ($duration > 5) {

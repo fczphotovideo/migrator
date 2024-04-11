@@ -137,7 +137,18 @@ abstract class Migration
         $this->each(function (stdClass $row) use ($bar, &$migrated, $total, $skip, $start, &$leftToRun) {
 
             $progress = ($skip + $migrated) / $total;
-            $hint = Number::percentage($progress * 100);
+
+            $hint = [
+                Number::percentage($progress * 100),
+            ];
+
+            if ($this->skipped) {
+                $hint[] = "skipped $this->skipped";
+            }
+
+            if ($this->failed) {
+                $hint[] = "failed $this->failed";
+            }
 
             $duration = microtime(true) - $start;
 
@@ -149,11 +160,11 @@ abstract class Migration
                     $leftToRun = min($leftToRun, $leftToMigrate / $tick);
                     $timeToEnd = now()->diffAsCarbonInterval(now()->addSeconds($leftToRun));
 
-                    $hint.= ' | '.$timeToEnd->forHumans();
+                    $hint[] = $timeToEnd->forHumans();
                 }
             }
 
-            $bar->hint($hint);
+            $bar->hint(implode(' | ', $hint));
 
             try {
                 if ($this->migrate($row)) {

@@ -134,8 +134,11 @@ abstract class Migration
         $this->before();
 
         $this->each(function (stdClass $row) use ($bar, &$migrated, $total, $skip, $start, &$leftToRun) {
+
             $duration = microtime(true) - $start;
-            if ($duration > 0) {
+
+            // Enable countdown after first 5 seconds
+            if ($duration > 5) {
                 $tick = $migrated / $duration;
                 if ($tick > 0) {
                     $leftToMigrate = $total - $skip - $migrated;

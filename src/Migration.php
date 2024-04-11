@@ -5,6 +5,7 @@ use Carbon\CarbonInterval;
 use Closure;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Number;
 use Illuminate\Support\Stringable;
 use Laravel\Prompts\Progress;
 use Psr\Log\LoggerInterface;
@@ -135,6 +136,9 @@ abstract class Migration
 
         $this->each(function (stdClass $row) use ($bar, &$migrated, $total, $skip, $start, &$leftToRun) {
 
+            $progress = ($skip + $migrated) / $total;
+            $hint = Number::percentage($progress * 100);
+
             $duration = microtime(true) - $start;
 
             // Enable countdown after first 5 seconds
@@ -145,9 +149,11 @@ abstract class Migration
                     $leftToRun = min($leftToRun, $leftToMigrate / $tick);
                     $timeToEnd = now()->diffAsCarbonInterval(now()->addSeconds($leftToRun));
 
-                    $bar->hint($timeToEnd->forHumans());
+                    $hint.= ' | '.$timeToEnd->forHumans();
                 }
             }
+
+            $bar->hint($hint);
 
             try {
                 if ($this->migrate($row)) {

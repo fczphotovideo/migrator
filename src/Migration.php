@@ -130,41 +130,49 @@ abstract class Migration
 
         $start = microtime(true);
         $total = $this->total();
-        $migrated = 0;
         $leftToRun = PHP_INT_MAX;
+        $hintWasUpdated = 0;
 
         $this->before();
 
-        $this->each(function (stdClass $row) use ($bar, &$migrated, $total, $skip, $start, &$leftToRun) {
-            $progress = ($skip + $migrated) / $total;
+        $this->each(function (stdClass $row) use ($bar, $total, $skip, $start, &$leftToRun, &$hintWasUpdated) {
 
-            $hint = [
-                Number::percentage($progress * 100),
-            ];
+            // Update hint every 0.5 sec
+            if ((microtime(true) - $hintWasUpdated) >= 0.5) {
 
-            if ($skipped = $this->skipped) {
-                $hint[] = "skipped ".Number::format($skipped)." (".Number::percentage(($skipped / $migrated) * 100).")";
-            }
+                $migrated = $this->succeed + $this->skipped + $this->failed;
 
-            if ($failed = $this->failed) {
-                $hint[] = "failed ".Number::format($failed)." (".Number::percentage(($failed / $migrated) * 100).")";;
-            }
+                $progress = ($skip + $migrated) / $total;
 
-            $duration = microtime(true) - $start;
+                $hint = [
+                    Number::percentage($progress * 100),
+                ];
 
-            // Enable countdown after first 5 seconds
-            if ($duration > 5) {
-                $tick = $migrated / $duration;
-                if ($tick > 0) {
-                    $leftToMigrate = $total - $skip - $migrated;
-                    $leftToRun = min($leftToRun, $leftToMigrate / $tick);
-                    $timeToEnd = now()->diffAsCarbonInterval(now()->addSeconds($leftToRun));
-
-                    $hint[] = $timeToEnd->forHumans();
+                if ($skipped = $this->skipped) {
+                    $hint[] = "skipped ".Number::format($skipped)." (".Number::percentage(($skipped / $migrated) * 100).")";
                 }
-            }
 
-            $bar->hint(implode(' | ', $hint));
+                if ($failed = $this->failed) {
+                    $hint[] = "failed ".Number::format($failed)." (".Number::percentage(($failed / $migrated) * 100).")";;
+                }
+
+                $duration = microtime(true) - $start;
+
+                // Enable countdown after first 5 seconds
+                if ($duration > 5) {
+                    $tick = $migrated / $duration;
+                    if ($tick > 0) {
+                        $leftToMigrate = $total - $skip - $migrated;
+                        $leftToRun = min($leftToRun, $leftToMigrate / $tick);
+                        $timeToEnd = now()->diffAsCarbonInterval(now()->addSeconds($leftToRun));
+
+                        $hint[] = $timeToEnd->forHumans();
+                    }
+                }
+
+                $hintWasUpdated = microtime(true);
+                $bar->hint(implode(' | ', $hint));
+            }
 
             try {
                 if ($this->migrate($row)) {
@@ -183,7 +191,6 @@ abstract class Migration
             $this->cursor->set($row->{$this->keyName()});
 
             $bar?->advance();
-            $migrated++;
         }, $limit);
 
         $this->after();

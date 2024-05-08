@@ -4,6 +4,7 @@ namespace Fcz\Migrator;
 
 use Carbon\CarbonInterval;
 use Closure;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
@@ -127,56 +128,13 @@ abstract class Migration
         $bar?->start();
         $skip = $this->skipQuery()->count();
         $bar?->advance($skip);
+        $limiter = Limit::perSecond(1);
 
         $start = microtime(true);
-        $total = $this->total();
-        $leftToRun = PHP_INT_MAX;
-        $hintWasUpdated = 0;
 
         $this->before();
 
-        $this->each(function (stdClass $row) use ($bar, $total, $skip, $start, &$leftToRun, &$hintWasUpdated) {
-
-            // Update hint every 0.5 sec
-            if ((microtime(true) - $hintWasUpdated) >= 0.5) {
-
-                $migrated = $this->succeed + $this->skipped + $this->failed;
-
-                $progress = ($skip + $migrated) / $total;
-
-                $hint = [
-                    Number::percentage($progress * 100),
-                ];
-
-                $duration = microtime(true) - $start;
-                $speed = $migrated / $duration;
-
-                $hint[] = "speed " . Number::format(round($speed)). " p/s";
-
-                if ($skipped = $this->skipped) {
-                    $hint[] = "skipped ".Number::format($skipped)." (".Number::percentage(($skipped / $migrated) * 100).")";
-                }
-
-                if ($failed = $this->failed) {
-                    $hint[] = "failed ".Number::format($failed)." (".Number::percentage(($failed / $migrated) * 100).")";;
-                }
-
-                // Enable countdown after first 5 seconds
-                if ($duration > 5) {
-                    $tick = $migrated / $duration;
-                    if ($tick > 0) {
-                        $leftToMigrate = $total - $skip - $migrated;
-                        $leftToRun = min($leftToRun, $leftToMigrate / $tick);
-                        $timeToEnd = now()->diffAsCarbonInterval(now()->addSeconds($leftToRun));
-
-                        $hint[] = $timeToEnd->forHumans();
-                    }
-                }
-
-                $hintWasUpdated = microtime(true);
-                $bar->hint(implode(' | ', $hint));
-            }
-
+        $this->each(function (stdClass $row) use ($bar, $skip, $start, $limiter) {
             try {
                 if ($this->migrate($row)) {
                     $this->succeed++;
@@ -192,6 +150,10 @@ abstract class Migration
             }
 
             $this->cursor->set($row->{$this->keyName()});
+
+            if ($bar) {
+                progressbar_hint($start, $bar, $limiter);
+            }
 
             $bar?->advance();
         }, $limit);

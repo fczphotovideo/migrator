@@ -6,12 +6,12 @@ use Illuminate\Support\Number;
 use Laravel\Prompts\Progress;
 
 if (!function_exists('progressbar_hint')) {
-    function progressbar_hint(float $start, Progress $progress, Limit $limit): void
+    function progressbar_hint(float $start, Progress $progress, Limit $limit, int $skip = 0): void
     {
         RateLimiter::attempt(
             key: $limit->key.$start.$progress->total.$progress->label,
             maxAttempts: $limit->maxAttempts,
-            callback: function () use ($start, $progress) {
+            callback: function () use ($start, $progress, $skip) {
                 $hint = [
                     Number::percentage($progress->percentage() * 100),
                 ];
@@ -19,7 +19,7 @@ if (!function_exists('progressbar_hint')) {
                 $duration = microtime(true) - $start;
 
                 if ($duration > 0) {
-                    $speed = $progress->progress / $duration;
+                    $speed = ($progress->progress - $skip) / $duration;
                     $hint[] = Number::format(round($speed))."/sec";
 
                     if ($speed > 0) {

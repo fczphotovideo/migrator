@@ -152,7 +152,7 @@ abstract class Migration
             $this->cursor->set($row->{$this->keyName()});
 
             if ($bar) {
-                progressbar_hint($start, $bar, $limiter);
+                progressbar_hint($start, $bar, $limiter, $skip);
             }
 
             $bar?->advance();

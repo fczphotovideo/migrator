@@ -5,6 +5,7 @@ namespace Fcz\Migrator;
 use Carbon\CarbonInterval;
 use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Command;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
@@ -75,7 +76,7 @@ abstract class Migration
         // DB::getPdo()->query("flush table {$this->table()}");
     }
 
-    public function always(): void
+    public function always(?Command $shell): void
     {
 
     }

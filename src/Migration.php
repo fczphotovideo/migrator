@@ -75,6 +75,11 @@ abstract class Migration
         // DB::getPdo()->query("flush table {$this->table()}");
     }
 
+    public function always(): void
+    {
+
+    }
+
     /**
      * Count all rows.
      */

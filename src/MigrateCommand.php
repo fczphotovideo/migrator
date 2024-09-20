@@ -174,6 +174,8 @@ abstract class MigrateCommand extends Command
 
             $this->wasMigrated($migration);
         }
+
+        $migration->always();
     }
 
     protected function stat(Migration $migration): void

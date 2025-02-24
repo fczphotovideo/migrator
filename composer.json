@@ -20,6 +20,6 @@
     "minimum-stability": "stable",
     "require": {
         "laravel/prompts": "^0.1.18",
-        "laravel/framework": "^11.0"
+        "laravel/framework": ">=11.0"
     }
 }

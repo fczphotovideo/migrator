@@ -1,10 +1,12 @@
 <?php
 
 namespace Fcz\Migrator;
+use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
 
+use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 
 use function Laravel\Prompts\error;
@@ -17,6 +19,8 @@ use function Laravel\Prompts\warning;
 
 abstract class MigrateCommand extends Command
 {
+    use LoggerAwareTrait;
+
     /**
      * The name and signature of the console command.
      *
@@ -37,7 +41,9 @@ abstract class MigrateCommand extends Command
 
     protected array $migrated = [];
 
-    abstract public function logger(): ?LoggerInterface;
+    /**
+     * @return array<array-key, Closure(): Migration>
+     */
     abstract public function migrations(): array;
 
     /**
@@ -84,13 +90,18 @@ abstract class MigrateCommand extends Command
         info('Done');
     }
 
+    /**
+     * @param  array<array-key, Closure(): Migration>  $migrations
+     *
+     * @return void
+     */
     public function cursors(array $migrations): void
     {
         $rows = [];
 
-        foreach ($migrations as $name => $closure) {
-            /** @var Migration $migration */
-            $migration = call_user_func($closure);
+        foreach ($migrations as $closure) {
+
+            $migration = $closure();
 
             $row = $rows[$migration->table()] ?? [];
 
@@ -160,8 +171,12 @@ abstract class MigrateCommand extends Command
         }
 
         if ($this->shouldMigrate($migration)) {
+
+            if ($this->logger) {
+                $migration->setLogger($this->logger);
+            }
+
             $migration
-                ->setLogger($this->logger())
                 ->run(
                     (int) $this->option('limit'),
                     progress(

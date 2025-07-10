@@ -11,18 +11,20 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
 use Illuminate\Support\Stringable;
 use Laravel\Prompts\Progress;
+use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use stdClass;
 use Throwable;
 
 abstract class Migration
 {
+    use LoggerAwareTrait;
+
     protected Carbon $start;
     public Cursor $cursor;
     protected int $succeed = 0;
     protected int $skipped = 0;
     protected int $failed = 0;
-    protected ?LoggerInterface $logger = null;
 
     public function __construct()
     {
@@ -187,12 +189,5 @@ abstract class Migration
     public function failed(): int
     {
         return $this->failed;
-    }
-
-    public function setLogger(?LoggerInterface $logger): static
-    {
-        $this->logger = $logger;
-
-        return $this;
     }
 }
